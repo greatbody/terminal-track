@@ -22,6 +22,9 @@ var (
 	flagExitCode  int
 	flagSession   string
 	flagTimestamp string
+	flagTTY       string
+	flagTerminal  string
+	flagTmuxPane  string
 )
 
 func init() {
@@ -30,6 +33,9 @@ func init() {
 	recordCmd.Flags().IntVar(&flagExitCode, "exit-code", -1, "Exit code (-1 means not captured)")
 	recordCmd.Flags().StringVar(&flagSession, "session", "", "Session ID")
 	recordCmd.Flags().StringVar(&flagTimestamp, "timestamp", "", "Timestamp (RFC3339)")
+	recordCmd.Flags().StringVar(&flagTTY, "tty", "", "TTY device (e.g. /dev/ttys003)")
+	recordCmd.Flags().StringVar(&flagTerminal, "terminal", "", "Terminal application (e.g. iTerm2, tmux)")
+	recordCmd.Flags().StringVar(&flagTmuxPane, "tmux-pane", "", "Tmux pane ID (e.g. %0)")
 
 	recordCmd.MarkFlagRequired("cmd")
 	recordCmd.MarkFlagRequired("dir")
@@ -77,6 +83,9 @@ func runRecord(cmd *cobra.Command, args []string) error {
 		Directory: flagDir,
 		SessionID: flagSession,
 		Hostname:  hostname,
+		TTY:       flagTTY,
+		Terminal:  flagTerminal,
+		TmuxPane:  flagTmuxPane,
 	}
 
 	if flagExitCode >= 0 {

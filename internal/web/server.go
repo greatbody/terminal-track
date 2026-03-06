@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/greatbody/terminal-track/internal/db"
@@ -50,6 +51,23 @@ func New(d *db.DB) (*Server, error) {
 				return "0"
 			}
 			return fmt.Sprintf("%d", *code)
+		},
+		"terminalLabel": func(r db.Record) string {
+			label := r.Terminal
+			if label == "" || label == "unknown" {
+				label = "terminal"
+			}
+			if r.TmuxPane != "" {
+				label = "tmux " + r.TmuxPane
+			}
+			return label
+		},
+		"shortTTY": func(tty string) string {
+			// "/dev/ttys003" -> "ttys003"
+			if idx := strings.LastIndex(tty, "/"); idx >= 0 {
+				return tty[idx+1:]
+			}
+			return tty
 		},
 		"json": func(v interface{}) template.JS {
 			b, _ := json.Marshal(v)
@@ -95,11 +113,13 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		Total   int
 		Search  string
 		Dir     string
+		Session string
 	}{
 		Records: records,
 		Total:   total,
 		Search:  r.URL.Query().Get("q"),
 		Dir:     r.URL.Query().Get("dir"),
+		Session: r.URL.Query().Get("session"),
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -139,6 +159,7 @@ func (s *Server) parseQueryOpts(r *http.Request) db.QueryOptions {
 	opts := db.QueryOptions{
 		Search:    q.Get("q"),
 		Directory: q.Get("dir"),
+		Session:   q.Get("session"),
 	}
 
 	if n, err := strconv.Atoi(q.Get("limit")); err == nil && n > 0 {

@@ -6,14 +6,23 @@
 [[ -n "$_TT_LOADED" ]] && return
 export _TT_LOADED=1
 
-# Generate a unique session ID for this shell instance
-export _TT_SESSION_ID="${RANDOM}${RANDOM}-$$-$(date +%s)"
+# Generate a unique session ID for this shell instance (UUID-like)
+if command -v uuidgen &>/dev/null; then
+    export _TT_SESSION_ID="$(uuidgen)"
+else
+    export _TT_SESSION_ID="$(date +%s)-$$-${RANDOM}${RANDOM}${RANDOM}"
+fi
 
 # Path to the tt binary — resolve once
 _TT_BIN="${_TT_BIN:-$(command -v tt 2>/dev/null)}"
 if [[ -z "$_TT_BIN" ]]; then
     return
 fi
+
+# Capture terminal context once per session (these don't change within a shell)
+typeset -g _tt_tty="$(tty 2>/dev/null)"
+typeset -g _tt_terminal="${TERM_PROGRAM:-unknown}"
+typeset -g _tt_tmux_pane="${TMUX_PANE:-}"
 
 # Temporary state for capturing command and timing
 typeset -g _tt_cmd=""
@@ -41,6 +50,9 @@ _tt_precmd() {
         --exit-code "$exit_code" \
         --session "$_TT_SESSION_ID" \
         --timestamp "$_tt_ts" \
+        --tty "$_tt_tty" \
+        --terminal "$_tt_terminal" \
+        --tmux-pane "$_tt_tmux_pane" \
         &>/dev/null &!
 
     # Reset state

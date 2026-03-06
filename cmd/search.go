@@ -77,11 +77,35 @@ func runSearch(cmd *cobra.Command, args []string) error {
 				exitStr = fmt.Sprintf(" [exit %d]", *r.ExitCode)
 			}
 		}
-		fmt.Printf("%s  %s  %s%s\n",
+
+		// Build terminal tag
+		termTag := ""
+		if r.TmuxPane != "" {
+			termTag = fmt.Sprintf("tmux %s", r.TmuxPane)
+		} else if r.Terminal != "" && r.Terminal != "unknown" {
+			termTag = r.Terminal
+		}
+		if r.TTY != "" {
+			tty := r.TTY
+			if idx := strings.LastIndex(tty, "/"); idx >= 0 {
+				tty = tty[idx+1:]
+			}
+			if termTag != "" {
+				termTag += " " + tty
+			} else {
+				termTag = tty
+			}
+		}
+		if termTag != "" {
+			termTag = " (" + termTag + ")"
+		}
+
+		fmt.Printf("%s  %s  %s%s%s\n",
 			r.Timestamp.Local().Format("2006-01-02 15:04:05"),
 			r.Directory,
 			r.Command,
 			exitStr,
+			termTag,
 		)
 	}
 	return nil
